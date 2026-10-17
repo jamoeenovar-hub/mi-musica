@@ -284,7 +284,7 @@ function vSet(){
  +'<div class="sec"><h2>Color</h2><p>Elige el tono de la app.</p><div class="chips"><button class="chip'+(cfg.ac==='t'?' on':'')+'" data-act="setAc" data-v="t"><span class="dot" style="background:#2dd4bf"></span>Turquesa</button><button class="chip'+(cfg.ac==='g'?' on':'')+'" data-act="setAc" data-v="g"><span class="dot" style="background:#1db954"></span>Verde</button></div></div>'
  +'<div class="sec"><h2>Respaldo</h2><p>Guarda tus playlists en un archivo. Los audios no se incluyen: tras importar, vuelve a agregarlos desde Archivos y se enlazan solos por nombre y tamaño.</p>'+(missing.size?'<p style="color:var(--ac)">Faltan '+missing.size+' canciones por cargar de tus playlists.</p>':'')+'<div class="acts"><button class="btn" data-act="exp">Exportar respaldo</button><button class="btn ghost" data-act="imp">Importar respaldo</button></div></div>'
  +'<div class="sec"><h2>Información de canciones</h2><p>Lee las portadas, títulos y artistas que traen incluidos tus archivos de audio. También puedes editar una canción desde su menú de tres puntos.</p><button class="btn ghost" data-act="refreshTags">Leer portadas y artistas</button></div>'
- +'<div class="sec"><h2>Flashcards</h2><p>Guarda todas tus carpetas y tarjetas, con sus imágenes y audios, en un solo archivo. También puedes importarlas desde uno.</p><div class="acts"><button class="btn" data-act="fcExportAll">Exportar flashcards</button><button class="btn ghost" data-act="imp">Importar</button></div></div>'
+ +'<div class="sec"><h2>Flashcards</h2><p>Guarda todas tus carpetas y tarjetas, con sus imágenes y audios, en un solo archivo. Al importar, lo que ya existe se omite y solo se agregan las tarjetas nuevas; tu avance de repaso no se toca.</p><div class="acts"><button class="btn" data-act="fcExportAll">Exportar flashcards</button><button class="btn ghost" data-act="imp">Importar</button></div></div>'
  +'<div class="sec"><h2>Almacenamiento</h2><div class="pre" id="stInfo"></div><button class="btn ghost" data-act="persist">Proteger almacenamiento</button></div>'
  +'<div class="sub" style="text-align:center">Mi Música · versión 4</div>';
 }
@@ -949,29 +949,64 @@ async function fcExport(folderId){
 }
 async function fcImport(d,parent){
  toast('Importando flashcards…',true);
- const idmap=new Map(),mmap=new Map();let nc=0,nn=0;
+ const norm=x=>String(x||'').trim().toLowerCase();
+ const st={nn:0,nc:0,up:0,same:0},idmap=new Map(),mmap=new Map(),dm=d.media||{};
+ const impMedia=async mid=>{
+  if(mmap.has(mid))return mmap.get(mid);
+  const m=dm[mid];if(!m||!m.data)return null;
+  const blob=await (await fetch(m.data)).blob();
+  const id=uid(),rec={id,kind:m.kind==='img'?'img':'aud',type:m.type||blob.type,name:m.name||'',size:blob.size,created:Date.now(),blob,thumb:m.thumb||null};
+  await dbPut('fcmedia',rec);
+  fcMeta.set(id,{id,kind:rec.kind,type:rec.type,name:rec.name,size:rec.size,thumb:rec.thumb});
+  mmap.set(mid,id);return id;
+ };
+ const sameMedia=(eid,m)=>{
+  const mt=fcMeta.get(eid);if(!mt||!m||!m.data)return false;
+  const b=String(m.data).split(',')[1]||'';
+  const est=Math.floor(b.length*3/4)-(b.slice(-2)==='=='?2:b.slice(-1)==='='?1:0);
+  return (mt.name||'')===(m.name||'')&&Math.abs((mt.size||0)-est)<=1;
+ };
+ const thumbOf=c=>{const ti=c.front.img||c.back.img;return ti&&fcMeta.get(ti)?fcMeta.get(ti).thumb||null:null;};
+ const keyOf=c=>norm(c.front&&c.front.text)+'|'+norm(c.back&&c.back.text);
  try{
-  for(const mid of Object.keys(d.media||{})){
-   const m=d.media[mid];if(!m||!m.data)continue;
-   const blob=await (await fetch(m.data)).blob();
-   const id=uid(),rec={id,kind:m.kind==='img'?'img':'aud',type:m.type||blob.type,name:m.name||'',size:blob.size,created:Date.now(),blob,thumb:m.thumb||null};
-   await dbPut('fcmedia',rec);
-   fcMeta.set(id,{id,kind:rec.kind,type:rec.type,name:rec.name,size:rec.size,thumb:rec.thumb});
-   mmap.set(mid,id);
-  }
-  (d.nodes||[]).forEach(n=>idmap.set(n.id,uid()));
-  for(const n of d.nodes||[]){
-   const node={id:idmap.get(n.id),parent:n.parent?(idmap.get(n.parent)||parent||null):(parent||null),name:n.name,created:Date.now()};
-   fcNodes.push(node);await dbPut('fcnodes',node);nn++;
-  }
-  const mp=x=>x?(mmap.get(x)||null):null;
+  const nodesIn=d.nodes||[],byIn=new Map(nodesIn.map(n=>[n.id,n]));
+  const resolve=async n=>{
+   if(idmap.has(n.id))return idmap.get(n.id);
+   const pid=(n.parent&&byIn.has(n.parent))?await resolve(byIn.get(n.parent)):(parent||null);
+   let ex=fcNodes.find(x=>(x.parent||null)===(pid||null)&&norm(x.name)===norm(n.name));
+   if(!ex){ex={id:fcNodes.some(x=>x.id===n.id)?uid():n.id,parent:pid||null,name:n.name,created:Date.now()};fcNodes.push(ex);await dbPut('fcnodes',ex);st.nn++;}
+   idmap.set(n.id,ex.id);return ex.id;
+  };
+  for(const n of nodesIn)await resolve(n);
   for(const c of d.cards||[]){
    const deck=idmap.get(c.deck);if(!deck)continue;
-   const side=s=>({text:(s&&s.text)||'',say:(s&&s.say)||'',img:mp(s&&s.img),aud:mp(s&&s.aud)});
-   const card={id:uid(),deck,front:side(c.front),back:side(c.back),thumb:c.thumb||null,created:c.created||Date.now(),due:c.due||0,ivl:c.ivl||0,ease:c.ease||2.5,reps:c.reps||0,lapses:c.lapses||0,state:c.state||'new'};
-   fcCards.push(card);await dbPut('fccards',card);nc++;
+   let ex=fcCards.find(x=>x.id===c.id||x.sid===c.id),byId=!!ex,link=false;
+   if(!ex){const k=keyOf(c);if(k!=='|'){ex=fcCards.find(x=>x.deck===deck&&keyOf(x)===k);if(ex){ex.sid=c.id;link=true;}}}
+   if(ex){
+    let ch=false;
+    for(const sd of ['front','back']){
+     const si=c[sd]||{},se=ex[sd];
+     if(byId){
+      if((si.text||'')!==(se.text||'')){se.text=si.text||'';ch=true;}
+      if((si.say||'')!==(se.say||'')){se.say=si.say||'';ch=true;}
+     }
+     for(const k of ['img','aud']){
+      const mid=si[k],m=mid&&dm[mid];if(!m)continue;
+      if(!se[k]){const nm=await impMedia(mid);if(nm){se[k]=nm;ch=true;}}
+      else if(byId&&!sameMedia(se[k],m)){const old=se[k],nm=await impMedia(mid);if(nm){se[k]=nm;await fcDelMedia(old);ch=true;}}
+     }
+    }
+    if(ch){ex.thumb=thumbOf(ex);st.up++;}else st.same++;
+    if(ch||link)await dbPut('fccards',ex);
+    continue;
+   }
+   const side=async s=>({text:(s&&s.text)||'',say:(s&&s.say)||'',img:s&&s.img?await impMedia(s.img):null,aud:s&&s.aud?await impMedia(s.aud):null});
+   const card={id:c.id&&!fcCards.some(x=>x.id===c.id)?c.id:uid(),deck,front:await side(c.front),back:await side(c.back),thumb:null,created:c.created||Date.now(),due:c.due||0,ivl:c.ivl||0,ease:c.ease||2.5,reps:c.reps||0,lapses:c.lapses||0,state:c.state||'new'};
+   card.thumb=thumbOf(card)||c.thumb||null;
+   fcCards.push(card);await dbPut('fccards',card);st.nc++;
   }
-  render();toast('Importado: '+nn+' carpetas y '+nc+' tarjetas');
+  render();
+  toast('Importado: '+st.nn+' carpetas nuevas, '+st.nc+' tarjetas nuevas'+(st.up?', '+st.up+' actualizadas':'')+(st.same?', '+st.same+' ya estaban':''));
  }catch(e){console.error(e);toast('No se pudo importar ese archivo');}
 }
 
