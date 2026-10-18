@@ -132,6 +132,8 @@ textarea{min-height:84px;resize:vertical}
 .slot{display:flex;align-items:center;gap:10px;margin-top:8px}
 .slot img{width:64px;height:64px;object-fit:cover;border-radius:8px}
 .slot audio{flex:1;min-width:0;height:36px}
+.fsec.drag{outline:2px dashed var(--ac);outline-offset:-2px}
+.hint{font-size:12px;color:var(--mut)}
 </style>
 </head>
 <body>
@@ -286,7 +288,7 @@ function vSet(){
  +'<div class="sec"><h2>Información de canciones</h2><p>Lee las portadas, títulos y artistas que traen incluidos tus archivos de audio. También puedes editar una canción desde su menú de tres puntos.</p><button class="btn ghost" data-act="refreshTags">Leer portadas y artistas</button></div>'
  +'<div class="sec"><h2>Flashcards</h2><p>Guarda todas tus carpetas y tarjetas, con sus imágenes y audios, en un solo archivo. Al importar, lo que ya existe se omite y solo se agregan las tarjetas nuevas; tu avance de repaso no se toca.</p><div class="acts"><button class="btn" data-act="fcExportAll">Exportar flashcards</button><button class="btn ghost" data-act="imp">Importar</button></div></div>'
  +'<div class="sec"><h2>Almacenamiento</h2><div class="pre" id="stInfo"></div><button class="btn ghost" data-act="persist">Proteger almacenamiento</button></div>'
- +'<div class="sub" style="text-align:center">Mi Música · versión 4</div>';
+ +'<div class="sub" style="text-align:center">Mi Música · versión 4.1</div>';
 }
 async function fillStorage(){
  const el=$('#stInfo');if(!el)return;
@@ -813,14 +815,14 @@ function fceCollect(){
 }
 function fceSection(sd,label){
  const s=E[sd];
- return '<div class="fsec"><h3>'+label+'</h3><textarea id="fceT-'+sd+'" rows="3" placeholder="Texto (opcional)">'+esc(s.text)+'</textarea>'
- +'<div class="slot">'+(s.img?'<img src="'+(s.img.url||'')+'" alt=""><button class="pill" data-act="fceRm" data-side="'+sd+'" data-k="img">Quitar imagen</button>':'<button class="pill" data-act="fcePick" data-side="'+sd+'" data-k="img">'+I('image',0,18)+' Imagen</button>')+'</div>'
+ return '<div class="fsec" data-side="'+sd+'"><h3>'+label+'</h3><textarea id="fceT-'+sd+'" rows="3" placeholder="Texto (opcional)">'+esc(s.text)+'</textarea>'
+ +'<div class="slot">'+(s.img?'<img src="'+(s.img.url||'')+'" alt=""><button class="pill" data-act="fceRm" data-side="'+sd+'" data-k="img">Quitar imagen</button>':'<button class="pill" data-act="fcePick" data-side="'+sd+'" data-k="img">'+I('image',0,18)+' Imagen</button><span class="hint">o pega (Ctrl+V) / arrastra una imagen aquí</span>')+'</div>'
  +'<div class="slot">'+(s.aud?'<audio controls preload="metadata" src="'+(s.aud.url||'')+'"></audio><button class="pill" data-act="fceRm" data-side="'+sd+'" data-k="aud">Quitar</button>':'<button class="pill" data-act="fcePick" data-side="'+sd+'" data-k="aud">'+I('volume',0,18)+' Audio</button>')+'</div>'
  +'<input type="text" id="fceS-'+sd+'" placeholder="Texto a pronunciar (opcional)" value="'+esc(s.say)+'" style="margin-top:8px"></div>';
 }
 function fceRender(){
  const old=$('#fceBody'),st=old?old.scrollTop:0;
- $('#fce').innerHTML='<div class="rvtop"><button class="icb tx" data-act="fceClose">Cerrar</button><div class="rvtitle">'+(E.id?'Editar tarjeta':'Nueva tarjeta')+'</div><button class="btn" data-act="fceSave">Guardar</button></div><div class="rvbody left" id="fceBody"><div class="sub" style="margin-bottom:10px">'+esc(fcPath(E.deck).map(n=>n.name).join(' › '))+'</div>'+fceSection('front','Frontal')+fceSection('back','Posterior')+'<div class="sub">Si una cara no tiene audio y su texto tiene la forma “Rise (Elevarse)”, el botón Escuchar pronuncia la palabra en inglés con la voz del iPhone.</div></div>';
+ $('#fce').innerHTML='<div class="rvtop"><button class="icb tx" data-act="fceClose">Cerrar</button><div class="rvtitle">'+(E.id?'Editar tarjeta':'Nueva tarjeta')+'</div><button class="btn" data-act="fceSave">Guardar</button></div><div class="rvbody left" id="fceBody"><div class="sub" style="margin-bottom:10px">'+esc(fcPath(E.deck).map(n=>n.name).join(' › '))+'</div>'+fceSection('front','Frontal')+fceSection('back','Posterior')+'<div class="sub" style="margin-bottom:8px">Tip: copia una imagen de cualquier página (clic derecho → Copiar imagen), toca o haz clic en el lado donde la quieres y pégala con Ctrl+V. También puedes arrastrarla encima.</div><div class="sub">Si una cara no tiene audio y su texto tiene la forma “Rise (Elevarse)”, el botón Escuchar pronuncia la palabra en inglés con la voz del iPhone.</div></div>';
  const nb=$('#fceBody');if(nb)nb.scrollTop=st;
 }
 function fceSetSlot(sd,k,slot){
@@ -864,6 +866,67 @@ async function fceSave(){
   render();toast('Tarjeta guardada');
  }catch(e){console.error(e);toast(e&&e.name==='QuotaExceededError'?'Sin espacio para guardar':'No se pudo guardar la tarjeta');}
 }
+
+function fceTargetSide(){if(E.lastSide)return E.lastSide;return !E.front.img?'front':(!E.back.img?'back':'front');}
+async function fceImageFrom(file,side){
+ if(!E)return;
+ toast('Procesando imagen…',true);
+ const b=await compressImage(file,900);
+ if(!E)return;
+ const nm=(file.name&&!/^image\.(png|jpe?g|gif|webp)$/i.test(file.name))?file.name:'Imagen pegada';
+ fceSetSlot(side,'img',{id:null,blob:b,name:nm,size:b.size,url:URL.createObjectURL(b)});
+ toast('Imagen agregada en '+(side==='front'?'Frontal':'Posterior'));
+}
+function fceAudioFrom(file,side){
+ if(!E)return;
+ fceSetSlot(side,'aud',{id:null,blob:file,name:file.name||'Audio',size:file.size,url:URL.createObjectURL(file)});
+ toast('Audio agregado en '+(side==='front'?'Frontal':'Posterior'));
+}
+function fceSideOf(el){const sec=el&&el.closest?el.closest('.fsec'):null;return sec?sec.dataset.side:null;}
+(function(){
+ const fce=$('#fce');
+ const mark=e=>{if(!E)return;const sd=fceSideOf(e.target);if(sd)E.lastSide=sd;};
+ fce.addEventListener('focusin',mark);fce.addEventListener('pointerdown',mark);
+ document.addEventListener('paste',e=>{
+  if(!E)return;
+  const cd=e.clipboardData;if(!cd)return;
+  let img=null;
+  for(const it of Array.from(cd.items||[])){if(it.kind==='file'&&it.type.indexOf('image/')===0){img=it.getAsFile();break;}}
+  if(!img)return;
+  const txt=cd.getData('text/plain');
+  if(txt&&txt.trim())return;
+  e.preventDefault();
+  fceImageFrom(img,fceSideOf(e.target)||fceTargetSide());
+ });
+ const clearDrag=()=>document.querySelectorAll('#fce .fsec.drag').forEach(x=>x.classList.remove('drag'));
+ fce.addEventListener('dragover',e=>{
+  if(!E)return;const sec=e.target.closest&&e.target.closest('.fsec');if(!sec)return;
+  e.preventDefault();document.querySelectorAll('#fce .fsec.drag').forEach(x=>{if(x!==sec)x.classList.remove('drag');});sec.classList.add('drag');
+ });
+ fce.addEventListener('dragleave',e=>{if(e.target.classList&&e.target.classList.contains('fsec'))e.target.classList.remove('drag');});
+ fce.addEventListener('drop',async e=>{
+  if(!E)return;
+  clearDrag();
+  const sec=e.target.closest&&e.target.closest('.fsec');if(!sec)return;
+  e.preventDefault();
+  const sd=sec.dataset.side,dt=e.dataTransfer;if(!dt)return;
+  const files=Array.from(dt.files||[]);
+  const img=files.find(f=>f.type.indexOf('image/')===0),aud=files.find(f=>f.type.indexOf('audio/')===0);
+  if(img){fceImageFrom(img,sd);return;}
+  if(aud){fceAudioFrom(aud,sd);return;}
+  let url=(dt.getData('text/uri-list')||'').split('\n').find(l=>l&&l[0]!=='#')||'';
+  if(!url){const h=dt.getData('text/html')||'',m=h.match(/<img[^>]+src=["']([^"']+)["']/i);if(m)url=m[1];}
+  if(!url){toast('No encontré una imagen en lo que arrastraste');return;}
+  try{
+   toast('Descargando imagen…',true);
+   const r=await fetch(url),b=await r.blob();
+   if(!b||String(b.type).indexOf('image/')!==0)throw new Error('no img');
+   fceImageFrom(new File([b],'Imagen',{type:b.type}),sd);
+  }catch(err){toast('Esa página no permite tomar la imagen. Haz clic derecho en la imagen, elige Copiar imagen y pégala aquí con Ctrl+V');}
+ });
+ window.addEventListener('dragover',e=>{if(E)e.preventDefault();});
+ window.addEventListener('drop',e=>{if(E)e.preventDefault();});
+})();
 
 // ----- repaso -----
 function rvStart(folder,mode,random){
@@ -1118,10 +1181,7 @@ document.addEventListener('click',e=>{
 $('#fSongs').addEventListener('change',async e=>{const f=Array.from(e.target.files);e.target.value='';if(f.length)await addFiles(f);});
 $('#fImg').addEventListener('change',async e=>{
  const f=e.target.files[0];e.target.value='';if(!f||!E||!E.pick)return;
- const pk=E.pick;toast('Procesando imagen…',true);
- const b=await compressImage(f,900);
- if(!E)return;
- fceSetSlot(pk.side,'img',{id:null,blob:b,name:f.name,size:b.size,url:URL.createObjectURL(b)});toast('Imagen lista');
+ fceImageFrom(f,E.pick.side);
 });
 $('#fAud').addEventListener('change',e=>{
  const f=e.target.files[0];e.target.value='';if(!f||!E||!E.pick)return;
