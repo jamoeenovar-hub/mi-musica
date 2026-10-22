@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#05060a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -134,6 +134,44 @@ textarea{min-height:84px;resize:vertical}
 .slot audio{flex:1;min-width:0;height:36px}
 .fsec.drag{outline:2px dashed var(--ac);outline-offset:-2px}
 .hint{font-size:12px;color:var(--mut)}
+
+/* ===== tema v4.2: colores y estilo inspirados en la referencia ===== */
+:root{--bg:#0c0d11;--card:#141821;--card2:#1a1f2a;--line:#222a36;--txt:#eaebef;--mut:#8a93a3;--ac:#16c9a2;--ac2:#0abfc6;--act:#39d2a6;--on:#04201d;--grad:linear-gradient(135deg,var(--ac),var(--ac2));--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+html[data-ac="green"]{--ac:#1db954;--ac2:#12a150;--act:#3ddc84}
+html,body{background:#05060a;font-family:"Inter","SF Pro Display","SF Pro Text",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+#app{background:radial-gradient(120% 55% at 50% 0%,#171a21 0%,#0d0e12 48%,#07080b 100%)}
+.top h1,.phead h1,.h1{font-weight:800;letter-spacing:-.02em}
+.t{font-weight:600}
+.kick{font-size:11px;font-weight:700;letter-spacing:.28em;text-transform:uppercase;color:var(--mut)}
+.btn{background:var(--grad);color:var(--on);font-weight:700;box-shadow:0 6px 18px color-mix(in srgb,var(--ac) 20%,transparent)}
+.btn.ghost{background:var(--card2);color:var(--txt);border:1px solid var(--line);box-shadow:none}
+.btn.danger{background:var(--card2);color:var(--danger);box-shadow:none}
+.pill{border:1px solid var(--line)}
+.pill.on{background:var(--grad);color:var(--on);border-color:transparent}
+.play{background:var(--grad);box-shadow:0 10px 30px color-mix(in srgb,var(--ac) 38%,transparent)}
+.top>.icb{width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid var(--line);color:var(--txt)}
+.icb.rnd{width:44px;height:44px;border-radius:50%;background:var(--card);border:1px solid var(--line);color:var(--txt);flex:none}
+.sec,.fsec{background:var(--card);border:1px solid var(--line);border-radius:18px}
+.cov{background:color-mix(in srgb,var(--ac) 14%,var(--card));border:1px solid color-mix(in srgb,var(--ac) 16%,var(--line));border-radius:12px}
+.cov.big{border-radius:16px}
+.row.cur .cov{background:var(--grad);color:var(--on);border-color:transparent;box-shadow:0 4px 14px color-mix(in srgb,var(--ac) 30%,transparent)}
+.row.cur .t{color:var(--act)}
+#mini{background:var(--card2);border:1px solid var(--line);border-radius:18px}
+.mbar i{background:var(--grad)}
+#nav{background:rgba(10,11,15,.9);border-top:1px solid var(--line);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+#sheet .box{background:var(--card2);border:1px solid var(--line);border-radius:22px 22px 0 0}
+#toast{border:1px solid var(--line)}
+.ftop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.fctx{flex:1;min-width:0;text-align:center}
+.fctxn{font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.bigcov{border-radius:28px;border:1px solid var(--line);box-shadow:0 22px 50px rgba(0,0,0,.55)}
+.bigcov img{border-radius:28px}
+.ft{font-size:27px;font-weight:800;letter-spacing:-.025em;text-align:center}
+.fa{text-align:center;color:var(--act);font-weight:600;font-size:16px;margin-top:2px}
+.times{font-family:var(--mono);font-size:11px;letter-spacing:.04em}
+input[type=range]{height:5px;background:linear-gradient(to right,var(--ac) var(--p,0%),#1c2431 var(--p,0%))}
+input[type=range]::-webkit-slider-thumb{width:18px;height:18px;background:#fff;box-shadow:0 0 0 5px rgba(255,255,255,.1)}
+.pickbar{display:flex;align-items:center;gap:12px;margin:0 0 8px}
 </style>
 </head>
 <body>
@@ -218,7 +256,7 @@ const curL=()=>lists.find(x=>x.id===curList);
 const listIds=l=>l.keys.filter(k=>byId.has(k));
 const fmt=t=>{if(!isFinite(t))return'0:00';t=Math.floor(t);return Math.floor(t/60)+':'+String(t%60).padStart(2,'0');};
 const mb=b=>b>=1073741824?(b/1073741824).toFixed(2)+' GB':Math.round(b/1048576)+' MB';
-const sortSongs=()=>songs.sort((a,b)=>a.title.localeCompare(b.title,'es',{sensitivity:'base'}));
+const sortSongs=()=>songs.sort((a,b)=>(b.added||0)-(a.added||0)||a.title.localeCompare(b.title,'es',{sensitivity:'base'}));
 function parse(name){const n=name.replace(/\.[^.]+$/,'').replace(/_/g,' ').trim();let a='Desconocido',t=n;const m=n.split(' - ');if(m.length>1){a=m[0].trim();t=m.slice(1).join(' - ').trim();}return{title:t||n,artist:a};}
 function toast(msg,sticky){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);if(!sticky)toastT=setTimeout(()=>t.classList.remove('show'),2600);}
 function saveCfg(){return dbPut('meta',{k:'cfg',ac:cfg.ac,shuffle,repeat});}
@@ -228,8 +266,8 @@ function buildShell(){
  $('#nav').innerHTML='<button data-act="tab" data-v="songs">'+I('music')+'<span>Canciones</span></button><button data-act="tab" data-v="lists">'+I('list')+'<span>Playlists</span></button><button data-act="tab" data-v="study">'+I('book')+'<span>Estudio</span></button><button data-act="tab" data-v="set">'+I('sliders')+'<span>Ajustes</span></button>';
  $('#stMenuBtn').innerHTML=I('left',0,26);$('#stBack').innerHTML=I('rew',0,36);$('#stFwd').innerHTML=I('fwd',0,36);$('#stEmptyIc').innerHTML=I('book',0,40);$('#aOnlyIc').innerHTML=I('headphones',0,44);
  $('#mini').innerHTML='<div class="cov sm" id="mCov">'+I('music',0,18)+'</div><div class="meta"><div class="t" id="mT"></div><div class="s" id="mA"></div></div><button class="icb" id="mP" data-act="toggle" aria-label="Reproducir o pausar"></button><button class="icb" data-act="next" aria-label="Siguiente">'+I('next',1,22)+'</button><div class="mbar"><i id="mBar"></i></div>';
- $('#full').innerHTML='<button class="icb" data-act="closeFull" style="align-self:flex-start" aria-label="Cerrar">'+I('down',0,30)+'</button><div class="bigwrap"><div class="bigcov" id="fCov">'+I('music',0,96)+'</div></div><div class="ft" id="fT"></div><div class="fa" id="fA"></div><input type="range" id="fSeek" min="0" max="1000" value="0" aria-label="Progreso"><div class="times"><span id="fC">0:00</span><span id="fD">0:00</span></div><div class="ctl"><button class="icb" id="fS" data-act="shuf" aria-label="Aleatorio">'+I('shuffle',0,24)+'</button><button class="icb" data-act="prev" aria-label="Anterior" style="color:var(--txt)">'+I('prev',1,30)+'</button><button class="play" id="fP" data-act="toggle" aria-label="Reproducir o pausar"></button><button class="icb" data-act="next" aria-label="Siguiente" style="color:var(--txt)">'+I('next',1,30)+'</button><button class="icb" id="fR" data-act="rep" aria-label="Repetir"></button></div>';
- $('#pick').innerHTML='<div class="top"><h1>Agregar canciones</h1><button class="btn" data-act="pickDone">Listo</button></div><div id="pickList"></div>';
+ $('#full').innerHTML='<div class="ftop"><button class="icb rnd" data-act="closeFull" aria-label="Cerrar">'+I('down',0,24)+'</button><div class="fctx"><div class="kick">Reproduciendo desde</div><div class="fctxn" id="fCtx"></div></div><span style="width:44px;flex:none"></span></div><div class="bigwrap"><div class="bigcov" id="fCov">'+I('music',0,96)+'</div></div><div class="ft" id="fT"></div><div class="fa" id="fA"></div><input type="range" id="fSeek" min="0" max="1000" value="0" aria-label="Progreso"><div class="times"><span id="fC">0:00</span><span id="fD">0:00</span></div><div class="ctl"><button class="icb" id="fS" data-act="shuf" aria-label="Aleatorio">'+I('shuffle',0,24)+'</button><button class="icb" data-act="prev" aria-label="Anterior" style="color:var(--txt)">'+I('prev',1,30)+'</button><button class="play" id="fP" data-act="toggle" aria-label="Reproducir o pausar"></button><button class="icb" data-act="next" aria-label="Siguiente" style="color:var(--txt)">'+I('next',1,30)+'</button><button class="icb" id="fR" data-act="rep" aria-label="Repetir"></button></div>';
+ $('#pick').innerHTML='<div class="top"><h1>Agregar canciones</h1><button class="btn" data-act="pickDone">Listo</button></div><div class="pickbar"><button class="pill" id="pickAll" data-act="pickAll">Seleccionar todo</button><span class="sub" id="pickCount"></span></div><div id="pickList"></div>';
  const sk=$('#fSeek');
  sk.addEventListener('input',()=>{seeking=true;const d=au.duration;if(d&&isFinite(d)){au.currentTime=sk.value/1000*d;}sk.style.setProperty('--p',(sk.value/10)+'%');$('#fC').textContent=fmt(au.currentTime);});
  sk.addEventListener('change',()=>{seeking=false;});
@@ -254,7 +292,7 @@ function rowSong(s){return '<div class="row'+(s.id===Q.cur?' cur':'')+'" data-ac
 function vSongs(){
  const top='<div class="top"><h1>Canciones</h1><button class="btn" data-act="addSongs">'+I('plus',0,16)+' Agregar</button></div>';
  if(!songs.length)return top+empty('Tu biblioteca está vacía','Agrega archivos de audio desde tu iPhone para empezar.');
- return top+'<div class="sub">'+songs.length+' canciones</div>'+songs.map(rowSong).join('');
+ return top+'<div class="sub">'+songs.length+' canciones · las más recientes primero</div>'+songs.map(rowSong).join('');
 }
 function listThumb(l){
  const ids=listIds(l);if(!ids.length)return null;
@@ -283,12 +321,12 @@ function vPl(){
 function vSet(){
  const missing=new Set();lists.forEach(l=>l.keys.forEach(k=>{if(!byId.has(k))missing.add(k);}));
  return '<div class="top"><h1>Ajustes</h1></div>'
- +'<div class="sec"><h2>Color</h2><p>Elige el tono de la app.</p><div class="chips"><button class="chip'+(cfg.ac==='t'?' on':'')+'" data-act="setAc" data-v="t"><span class="dot" style="background:#2dd4bf"></span>Turquesa</button><button class="chip'+(cfg.ac==='g'?' on':'')+'" data-act="setAc" data-v="g"><span class="dot" style="background:#1db954"></span>Verde</button></div></div>'
+ +'<div class="sec"><h2>Color</h2><p>Elige el tono de la app.</p><div class="chips"><button class="chip'+(cfg.ac==='t'?' on':'')+'" data-act="setAc" data-v="t"><span class="dot" style="background:#16c9a2"></span>Turquesa</button><button class="chip'+(cfg.ac==='g'?' on':'')+'" data-act="setAc" data-v="g"><span class="dot" style="background:#1db954"></span>Verde</button></div></div>'
  +'<div class="sec"><h2>Respaldo</h2><p>Guarda tus playlists en un archivo. Los audios no se incluyen: tras importar, vuelve a agregarlos desde Archivos y se enlazan solos por nombre y tamaño.</p>'+(missing.size?'<p style="color:var(--ac)">Faltan '+missing.size+' canciones por cargar de tus playlists.</p>':'')+'<div class="acts"><button class="btn" data-act="exp">Exportar respaldo</button><button class="btn ghost" data-act="imp">Importar respaldo</button></div></div>'
  +'<div class="sec"><h2>Información de canciones</h2><p>Lee las portadas, títulos y artistas que traen incluidos tus archivos de audio. También puedes editar una canción desde su menú de tres puntos.</p><button class="btn ghost" data-act="refreshTags">Leer portadas y artistas</button></div>'
  +'<div class="sec"><h2>Flashcards</h2><p>Guarda todas tus carpetas y tarjetas, con sus imágenes y audios, en un solo archivo. Al importar, lo que ya existe se omite y solo se agregan las tarjetas nuevas; tu avance de repaso no se toca.</p><div class="acts"><button class="btn" data-act="fcExportAll">Exportar flashcards</button><button class="btn ghost" data-act="imp">Importar</button></div></div>'
  +'<div class="sec"><h2>Almacenamiento</h2><div class="pre" id="stInfo"></div><button class="btn ghost" data-act="persist">Proteger almacenamiento</button></div>'
- +'<div class="sub" style="text-align:center">Mi Música · versión 4.1</div>';
+ +'<div class="sub" style="text-align:center">Mi Música · versión 4.2</div>';
 }
 async function fillStorage(){
  const el=$('#stInfo');if(!el)return;
@@ -330,10 +368,10 @@ function buildOrder(startId){
  if(shuffle){const rest=Q.ids.filter(x=>x!==startId);for(let i=rest.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[rest[i],rest[j]]=[rest[j],rest[i]];}Q.order=[startId].concat(rest);Q.pos=0;}
  else{Q.order=Q.ids.slice();Q.pos=Math.max(0,Q.order.indexOf(startId));}
 }
-function playCtx(ids,start,shuf){
+function playCtx(ids,start,shuf,ctxName){
  if(!ids.length){toast('No hay canciones para reproducir');return;}
  if(typeof shuf==='boolean'){shuffle=shuf;saveCfg();}
- Q.ids=ids.slice();
+ Q.ids=ids.slice();Q.ctxName=ctxName||'';
  const startId=start||(shuffle?ids[Math.floor(Math.random()*ids.length)]:ids[0]);
  buildOrder(startId);loadCur();
 }
@@ -371,6 +409,7 @@ function sync(){
  $('#mini').classList.toggle('on',!!s);
  showCover();
  if(s){$('#mT').textContent=s.title;$('#mA').textContent=s.artist;$('#fT').textContent=s.title;$('#fA').textContent=s.artist;}
+ $('#fCtx').textContent=Q.ctxName||'Canciones';
  const pl=!au.paused;
  $('#mP').innerHTML=I(pl?'pause':'play',1,24);
  $('#fP').innerHTML=I(pl?'pause':'play',1,30);
@@ -446,9 +485,15 @@ async function delSong(id){
  render();sync();toast('Canción eliminada');
 }
 let pickSet=new Set(),pickList=null;
+function pickSync(){
+ const all=songs.length>0&&songs.every(x=>pickSet.has(x.id));
+ const b=$('#pickAll');if(b)b.textContent=all?'Quitar selección':'Seleccionar todo';
+ const c=$('#pickCount');if(c)c.textContent=songs.filter(x=>pickSet.has(x.id)).length+' seleccionadas';
+}
 function openPicker(lid){
  pickList=lid;const l=lists.find(x=>x.id===lid);pickSet=new Set(l.keys);
  $('#pickList').innerHTML=songs.map(s=>'<div class="row" data-act="pickToggle" data-id="'+esc(s.id)+'"><div class="chk'+(pickSet.has(s.id)?' on':'')+'">'+(pickSet.has(s.id)?I('check',0,14):'')+'</div><div class="meta"><div class="t">'+esc(s.title)+'</div><div class="s">'+esc(s.artist)+'</div></div></div>').join('')||empty('Sin canciones','Primero agrega canciones a tu biblioteca.');
+ pickSync();
  $('#pick').classList.add('on');
 }
 function pickDone(){
@@ -1076,7 +1121,7 @@ async function fcImport(d,parent){
 const A={
  tab(el){view=el.dataset.v;curList=null;render();$('#view').scrollTop=0;},
  addSongs(){$('#fSongs').click();},
- playSong(el,id){playCtx(view==='pl'?listIds(curL()):songs.map(s=>s.id),id);},
+ playSong(el,id){playCtx(view==='pl'?listIds(curL()):songs.map(s=>s.id),id,undefined,view==='pl'?curL().name:'Canciones');},
  songMenu(el,id){
   const s=byId.get(id);if(!s)return;
   const items=[{l:'Agregar a playlist',f:()=>chooseList(id)},{l:'Editar título y artista',f:()=>editSong(id)}];
@@ -1095,8 +1140,8 @@ const A={
   ]);
  },
  addToPl(){openPicker(curList);},
- playAll(){playCtx(listIds(curL()),null,false);},
- shufAll(){playCtx(listIds(curL()),null,true);},
+ playAll(){playCtx(listIds(curL()),null,false,curL().name);},
+ shufAll(){playCtx(listIds(curL()),null,true,curL().name);},
  openFull(){$('#full').classList.add('open');},
  closeFull(){$('#full').classList.remove('open');},
  toggle(){toggle();},
@@ -1167,7 +1212,13 @@ const A={
  pickToggle(el,id){
   if(pickSet.has(id))pickSet.delete(id);else pickSet.add(id);
   const c=el.querySelector('.chk'),on=pickSet.has(id);
-  c.classList.toggle('on',on);c.innerHTML=on?I('check',0,14):'';
+  c.classList.toggle('on',on);c.innerHTML=on?I('check',0,14):'';pickSync();
+ },
+ pickAll(){
+  const all=songs.every(x=>pickSet.has(x.id));
+  songs.forEach(x=>{if(all)pickSet.delete(x.id);else pickSet.add(x.id);});
+  document.querySelectorAll('#pickList .row[data-id]').forEach(r=>{const on=pickSet.has(r.dataset.id),c=r.querySelector('.chk');if(c){c.classList.toggle('on',on);c.innerHTML=on?I('check',0,14):'';}});
+  pickSync();
  },
  pickDone(){pickDone();}
 };
